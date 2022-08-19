@@ -1,0 +1,19 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://39.98.41.126:3306/qg_final?useUnicode=true&characterEncoding=utf-8
+    username: root
+    password: 3751ueoxjwgixjw3913
+    type: com.alibaba.druid.pool.DruidDataSource
+
+qg-final-algorithm:
+  resources-path: /root/qg_final_algorithmVisualization/custom/
+  #resources-path: E:/custom/
+  to-send-url: http://localhost:32617/pushfile
+  #to-send-url: http://qgailab.com/algorithmVisualization/algorithm/pushfile
+  static-path: /root/qg_final_algorithmVisualization/html/static
+server:
+  port: 32618
+#mybatis-plus:
+  #configuration:
+    #log-impl: org.apache.ibatis.logging.stdout.StdOutImpl

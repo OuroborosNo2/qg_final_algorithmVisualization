@@ -62,7 +62,7 @@ public class FileController {
             String originalFilename = f1.getOriginalFilename();
             //文件后缀名
             String suffix = originalFilename.substring(originalFilename.lastIndexOf("."));
-            switch (suffix){
+            /*switch (suffix){
                 case ".csv":
                 case ".npy":
                 case ".mat":
@@ -72,7 +72,7 @@ public class FileController {
                     break;
                 default:
                     return new Result(400,"文件格式错误");
-            }
+            }*/
 
             String fileName = "custom" + suffix;
             String destFilePath = resourcesPath + fileName;
@@ -103,7 +103,7 @@ public class FileController {
             return new Result(ResultEnum.SYSTEM_ERR);
         }catch (IllegalStateException ex){
             ex.printStackTrace();
-            return new Result(500,"计算程序未启动");
+            return new Result(500,"Calculator does not start");
         }
         return new Result(ResultEnum.SUCCESS,result);
 

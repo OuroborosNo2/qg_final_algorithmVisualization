@@ -5,6 +5,7 @@ import cn.hutool.core.util.RandomUtil;
 import com.qgstudio.config.MybatisPlusConfig;
 import com.qgstudio.mapper.PointMapper;
 import com.qgstudio.service.HttpService;
+import com.qgstudio.util.NumberUtil;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -21,7 +22,21 @@ class QgFinalAlgorithmApplicationTests {
 
     @Test
     void contextLoads() {
-        MybatisPlusConfig.setDynamicTableName("DSG_DP_1_200");
+        List<Integer> list = new ArrayList<>();
+        list.add(1);
+        list.add(2);
+        list.add(3);
+        list.add(4);
+        list.add(5);
+        list.add(6);
+        list.add(7);
+        list.add(8);
+        list.add(9);
+        list.add(10);
+        list.add(11);
+        for (List<Integer> integers : NumberUtil.sub(list, 1)) {
+            System.out.println(integers);
+        }
     }
 
     @Test

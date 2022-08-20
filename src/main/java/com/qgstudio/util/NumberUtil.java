@@ -1,5 +1,6 @@
 package com.qgstudio.util;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.RandomUtil;
 
 import java.util.ArrayList;
@@ -37,5 +38,31 @@ public class NumberUtil {
         //加上最后一个
         numbers.add(total);
         return numbers;
+    }
+
+    /**
+     * 将一个集合平均分割为多个小集合
+     * @param list 要分割的集合
+     * @param pieces 分割片数
+     * @return 分割后的集合数组
+     * @param <T>
+     */
+    public static <T> List<T>[] sub(List<T> list, int pieces){
+        List<T>[] lists = new List[pieces];
+        //每片的大小
+        int perSize = list.size()/pieces;
+        for (int i=0;i<pieces;i++) {
+            //每一片
+            List<T> piece = new ArrayList<>();
+            for(int o=0;o<perSize;o++){
+                piece.add(list.get(o+i*perSize));
+            }
+            lists[i] = piece;
+        }
+        //将多余的放进最后一个List
+        for(int i=0;i<list.size()%pieces;i++){
+            lists[pieces-1].add(list.get(pieces*perSize+i));
+        }
+        return lists;
     }
 }

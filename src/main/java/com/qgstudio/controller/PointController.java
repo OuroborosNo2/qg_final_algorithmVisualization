@@ -1,15 +1,14 @@
 package com.qgstudio.controller;
 
-import cn.hutool.core.util.RandomUtil;
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.qgstudio.constant.ResultEnum;
-import com.qgstudio.po.Adjacency;
 import com.qgstudio.po.Point;
 import com.qgstudio.service.PointService;
 import com.qgstudio.util.NumberUtil;
 import com.qgstudio.vo.PointVo;
 import com.qgstudio.vo.Result;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.util.concurrent.Future;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 /**
  * @author OuroborosNo2
@@ -36,8 +35,16 @@ public class PointController {
      * @return
      */
     @GetMapping("/all")
-    public Result getAll(@RequestParam String tableName,@RequestParam(required = false) boolean polishId){
-        List<List<Point>> lists = pointService.get(tableName,null);
+    public Result getAll(@RequestParam String tableName,@RequestParam(required = false) boolean polishId,@RequestParam(required = false)Integer pieces) throws ExecutionException, InterruptedException {
+        //多线程查询
+        int size = pointService.getDivisionList(tableName).size();
+        List<Integer> numbers = new ArrayList<>();
+        for(int i=1;i<=size;i++){
+            numbers.add(i);
+        }
+        List<List<Point>> lists = multiSelect(numbers,pieces,tableName);
+        //原来不分片
+        //List<List<Point>> lists = pointService.get(tableName,null);
         if (lists.isEmpty()){
             return new Result(ResultEnum.ARGS_ERR);
         }
@@ -93,7 +100,7 @@ public class PointController {
      * @return
      */
     @GetMapping
-    public Result get(@RequestParam String tableName,@RequestParam int amount,@RequestParam(required = false) boolean polishId){
+    public Result get(@RequestParam String tableName,@RequestParam int amount,@RequestParam(required = false) boolean polishId,@RequestParam(required = false)Integer pieces) throws ExecutionException, InterruptedException {
         List<Point> divisionList = pointService.getDivisionList(tableName);
         if (divisionList.isEmpty()){
             return new Result(ResultEnum.ARGS_ERR);
@@ -109,7 +116,12 @@ public class PointController {
         }
         //抽帧算法
         List<Integer> numbers = NumberUtil.frameExtracting(total, amount);
-        List<List<Point>> lists = pointService.get(tableName,numbers);
+
+        //多线程查询
+        List<List<Point>> lists = multiSelect(numbers,pieces,tableName);
+
+        //原来不分片
+        //List<List<Point>> lists = pointService.get(tableName,numbers);
 
         //处理
         int count = 0;
@@ -135,5 +147,40 @@ public class PointController {
     public Result getTimeQuantity(@RequestParam String tableName){
         List<Point> divisionList = pointService.getDivisionList(tableName);
         return new Result(divisionList.size());
+    }
+
+    private List<List<Point>> execute(int i, String tableName, List<Integer> numbers){
+        System.out.println("任务"+i+"开始执行");
+        List<List<Point>> lists = pointService.get(tableName, numbers);
+        System.out.println("任务"+i+"完成");
+        return lists;
+    }
+
+    /**
+     * 多分片线程查询
+     * @return
+     */
+    private List<List<Point>> multiSelect(List<Integer> numbers,Integer pieces,String tableName) throws ExecutionException, InterruptedException {
+        //片数,默认为5,最大不超过20
+        pieces = pieces==null ? 5 : pieces>20 ? 20 : pieces;
+        //将numbers分片
+        List<Integer>[] numberPieces = NumberUtil.sub(numbers, pieces);
+        //多线程
+        EventLoopGroup group = new NioEventLoopGroup(pieces);
+        //分配任务
+        Future<List<List<Point>>>[] listPieces = new Future[pieces];
+        for (int i=0;i<pieces;i++) {
+            //int finalI = i;
+            int finalI = i;
+            listPieces[i] = group.next().submit(()-> execute(finalI,tableName,numberPieces[finalI]));
+        }
+        //各自完成任务后汇总
+        List<List<Point>> lists = new ArrayList<>();
+        for(int i=0;i<pieces;i++){
+            //Future类的包装允许get()等待任务完成再执行
+            lists.addAll(listPieces[i].get());
+        }
+
+        return lists;
     }
 }
